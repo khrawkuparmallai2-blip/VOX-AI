@@ -889,7 +889,6 @@
     ctx.fillStyle = 'rgba(0,0,0,.18)';
     ctx.fillRect(0, 0, W, H);
 
-    // central glow
     const cx = W / 2, cy = H / 2;
     const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.min(W, H) * .5);
     g.addColorStop(0, 'rgba(0,180,255,.10)');
@@ -909,7 +908,6 @@
       ctx.arc(p.x, p.y, p.r * (1 + glow), 0, Math.PI * 2);
       ctx.fill();
     }
-    // connecting lines
     for (let i = 0; i < particles.length; i++) {
       for (let j = i + 1; j < particles.length; j++) {
         const a = particles[i], b = particles[j];
@@ -950,12 +948,10 @@ function loadState() {
     const raw = localStorage.getItem('voxState');
     if (raw) Object.assign(state, JSON.parse(raw));
   } catch (e) {}
-  // daily reset for uploads
   const today = new Date().toISOString().slice(0, 10);
   if (state.lastReset !== today) {
     state.uploadsToday = 0;
     state.lastReset = today;
-    // process queued for today
     if (state.queue && state.queue.length) {
       state.queue.forEach(q => { q.status = 'queued'; });
     }
@@ -971,7 +967,6 @@ function showScreen(id) {
 }
 
 setTimeout(() => {
-  // end intro
   if (window._stopIntro) window._stopIntro();
   showScreen('auth-screen');
   loadState();
@@ -1056,7 +1051,7 @@ function toast(msg) {
 }
 
 /* ============================================================
-   CHAT
+   CHAT (NOW CONNECTED TO CLOUDFLARE WORKER)
    ============================================================ */
 function autoGrow(el) {
   el.style.height = 'auto';
@@ -1065,6 +1060,7 @@ function autoGrow(el) {
 function chatKey(e) {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
 }
+
 function sendChat() {
   const input = document.getElementById('chat-input');
   const text = input.value.trim();
@@ -1072,15 +1068,8 @@ function sendChat() {
   appendMsg('user', text);
   input.value = ''; input.style.height = 'auto';
   const typing = appendMsg('ai', '…');
-  function sendChat() {
-  const input = document.getElementById('chat-input');
-  const text = input.value.trim();
-  if (!text) return;
-  appendMsg('user', text);
-  input.value = ''; input.style.height = 'auto';
-  const typing = appendMsg('ai', '…');
   
-  // 👇 PASTE THIS NEW CODE HERE
+  // REAL AI FETCH CALL
   fetch('https://vox-api.khrawkuparmallai2.workers.dev', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1119,31 +1108,12 @@ function addMsgButtons(el) {
   re.onclick = () => {
     el.textContent = '…';
     setTimeout(() => {
-      el.textContent = mockAIResponse(state.chatHistory[state.chatHistory.length - 2]?.text || 'hello');
+      el.textContent = "Regeneration not connected in this demo.";
       addMsgButtons(el);
     }, 500);
   };
   row.append(copy, re);
   el.appendChild(row);
-}
-
-function mockAIResponse(q) {
-  const lc = q.toLowerCase();
-  if (lc.includes('hello') || lc.includes('hi')) return "Hello! I'm VOX AI. I can help you write, code, study, brainstorm ideas, or generate content. What would you like to explore?";
-  if (lc.includes('code') || lc.includes('javascript') || lc.includes('python')) {
-    return "Here's a quick example:\n\n// JavaScript\nconst greet = (name) => `Hello, ${name}!`;\nconsole.log(greet('VOX'));\n\nThis defines an arrow function that returns a greeting. Want a specific language or task?";
-  }
-  if (lc.includes('write') || lc.includes('essay') || lc.includes('story')) {
-    return "Great — let's write! Here's a starting point:\n\n\"The city hummed with neon light, each pulse a heartbeat of ambition. Somewhere between the noise and the silence, an idea was born — one that would change everything.\"\n\nTell me the topic, tone, or length, and I'll expand it.";
-  }
-  if (lc.includes('study') || lc.includes('explain')) {
-    return "Here's a simple breakdown:\n\n• Core idea — the central concept in one sentence.\n• Why it matters — the real-world impact.\n• Example — a concrete illustration.\n• Takeaway — the one thing to remember.\n\nSend me the topic and I'll fill this in for you.";
-  }
-  return "I hear you. Here's a helpful angle:\n\n" +
-    "1. Break the task into small steps.\n" +
-    "2. Define what success looks like.\n" +
-    "3. Take the first action now.\n\n" +
-    "If you share more context, I can be more specific. (Demo mode — connect a real AI API for full responses.)";
 }
 
 /* ============================================================
@@ -1174,12 +1144,10 @@ function generateImage() {
   canvas.width = 512; canvas.height = 512;
   const ctx = canvas.getContext('2d');
 
-  // deterministic pseudo-random from prompt
   let seed = 0;
   for (let i = 0; i < prompt.length; i++) seed = (seed * 31 + prompt.charCodeAt(i)) >>> 0;
   function rand() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
 
-  // background gradient
   const hues = [210, 230, 260, 300, 190];
   const h1 = hues[Math.floor(rand() * hues.length)];
   const h2 = (h1 + 60 + rand() * 80) % 360;
@@ -1189,7 +1157,6 @@ function generateImage() {
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, 512, 512);
 
-  // shapes
   const shapeCount = 20 + Math.floor(rand() * 30);
   for (let i = 0; i < shapeCount; i++) {
     const x = rand() * 512, y = rand() * 512;
@@ -1203,7 +1170,6 @@ function generateImage() {
     ctx.fillStyle = rg;
     ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
   }
-  // grid lines (cinematic)
   ctx.globalCompositeOperation = 'overlay';
   ctx.strokeStyle = 'rgba(0,180,255,.15)';
   ctx.lineWidth = 1;
@@ -1211,7 +1177,6 @@ function generateImage() {
     ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 512); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(512, i); ctx.stroke();
   }
-  // style overlay
   if (style === 'anime') {
     ctx.globalCompositeOperation = 'source-over';
     ctx.fillStyle = 'rgba(255,200,220,.08)';
@@ -1227,7 +1192,6 @@ function generateImage() {
   const result = document.getElementById('img-result');
   result.innerHTML = `<img src="${dataURL}" style="width:100%;border-radius:14px;border:1px solid var(--line);box-shadow:var(--shadow)" alt="Generated" />`;
 
-  // save to library
   state.library.unshift({ type: 'image', name: prompt.slice(0, 30), data: dataURL, ts: Date.now() });
   saveState();
   toast('Image generated ✨');
@@ -1516,4 +1480,4 @@ setInterval(() => {
 }, 60 * 1000);
 </script>
 </body>
-  </html>
+</html>
