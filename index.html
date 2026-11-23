@@ -1072,13 +1072,31 @@ function sendChat() {
   appendMsg('user', text);
   input.value = ''; input.style.height = 'auto';
   const typing = appendMsg('ai', '…');
-  setTimeout(() => {
-    typing.textContent = mockAIResponse(text);
+  function sendChat() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  appendMsg('user', text);
+  input.value = ''; input.style.height = 'auto';
+  const typing = appendMsg('ai', '…');
+  
+  // 👇 PASTE THIS NEW CODE HERE
+  fetch('https://vox-api.khrawkuparmallai2.workers.dev', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt: text })
+  })
+  .then(res => res.json())
+  .then(data => {
+    typing.textContent = data.text;
     addMsgButtons(typing);
     state.chatHistory.push({ role: 'user', text });
-    state.chatHistory.push({ role: 'ai', text: typing.textContent });
+    state.chatHistory.push({ role: 'ai', text: data.text });
     saveState();
-  }, 700);
+  })
+  .catch(err => {
+    typing.textContent = "Connection error. Please try again.";
+  });
 }
 
 function appendMsg(role, text) {
